@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"log"
 	"time"
+	
 )
 
 const message = "home handler!!"
@@ -13,9 +14,11 @@ type HandlersLog struct {
 }
 
 func (h *HandlersLog) HomeHandler(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	url := r.PostFormValue("url")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(message))
+	w.Write([]byte(url))
+	// w.Write([]byte(fmt.Sprint(controllers.Hash(url))))
 }
 
 func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
@@ -28,8 +31,11 @@ func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
 
 
 func (h *HandlersLog) SetUpRoutes(mux *http.ServeMux){
-	mux.HandleFunc("/", h.Logger(h.HomeHandler))
+	mux.HandleFunc("/encode", h.Logger(h.HomeHandler))
+	mux.HandleFunc("/decode", h.Logger(h.HomeHandler))
+	mux.HandleFunc("/redirect", h.Logger(h.HomeHandler))
 }
+
 
 func NewHandlersLog(logger *log.Logger) *HandlersLog{
 	return &HandlersLog{
