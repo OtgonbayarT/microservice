@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"log"
 	"time"
-	
+	"fmt"
+
+	"github.com/OtgonbayarT/microservice/controllers"
 )
 
 const message = "home handler!!"
@@ -17,8 +19,8 @@ func (h *HandlersLog) HomeHandler(w http.ResponseWriter, r *http.Request){
 	// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	url := r.PostFormValue("url")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(url))
-	// w.Write([]byte(fmt.Sprint(controllers.Hash(url))))
+	// w.Write([]byte(url))
+	w.Write([]byte(fmt.Sprint(controllers.Hash(url))))
 }
 
 func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
