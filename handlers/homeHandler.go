@@ -5,8 +5,10 @@ import (
 	"log"
 	"time"
 	"fmt"
+	"errors"
 
 	"github.com/OtgonbayarT/microservice/controllers"
+	"github.com/rapidloop/skv"
 )
 
 const message = "home handler!!"
@@ -15,12 +17,54 @@ type HandlersLog struct {
 	logger *log.Logger
 }
 
-func (h *HandlersLog) HomeHandler(w http.ResponseWriter, r *http.Request){
-	// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+var (
+	ErrNotFound = errors.New("skv: key not found")
+)
+
+func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
 	url := r.PostFormValue("url")
+	store, err := skv.Open("/home/otgonbayar/urls.db")
+	if err != nil {
+		h.logger.Fatalf("cannot open db: %v", err)
+	}
+	if err := store.Put(fmt.Sprint(controllers.Hash(url)), url); err != nil {
+		h.logger.Fatalf("cannot save data: %v", err)
+	}
+	store.Close()
 	w.WriteHeader(http.StatusOK)
-	// w.Write([]byte(url))
+	
 	w.Write([]byte(fmt.Sprint(controllers.Hash(url))))
+}
+
+func (h *HandlersLog) DecodeHandler(w http.ResponseWriter, r *http.Request){
+	code := r.URL.Path[len("/decode/"):]
+	store, err := skv.Open("/home/otgonbayar/urls.db")
+	if err != nil {
+		h.logger.Fatalf("cannot open db: %v", err)
+	}
+	var val string
+	if err := store.Get(fmt.Sprint(code), &val); err != nil {
+		h.logger.Fatalf("data not found: %v", err)
+	}
+	store.Close()
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(val))
+}
+
+func (h *HandlersLog) RedirectHandler(w http.ResponseWriter, r *http.Request){
+	code := r.URL.Path[len("/redirect/"):]
+	store, err := skv.Open("/home/otgonbayar/urls.db")
+	if err != nil {
+		h.logger.Fatalf("cannot open db: %v", err)
+	}
+	var url string
+	if err := store.Get(fmt.Sprint(code), &url); err != nil {
+		h.logger.Fatalf("data not found: %v", err)
+	}
+	store.Close()
+
+	http.Redirect(w, r, string(url), 301)
 }
 
 func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
@@ -33,9 +77,9 @@ func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
 
 
 func (h *HandlersLog) SetUpRoutes(mux *http.ServeMux){
-	mux.HandleFunc("/encode", h.Logger(h.HomeHandler))
-	mux.HandleFunc("/decode", h.Logger(h.HomeHandler))
-	mux.HandleFunc("/redirect", h.Logger(h.HomeHandler))
+	mux.HandleFunc("/encode", h.Logger(h.EncodeHandler))
+	mux.HandleFunc("/decode/", h.Logger(h.DecodeHandler))
+	mux.HandleFunc("/redirect/", h.Logger(h.RedirectHandler))
 }
 
 
