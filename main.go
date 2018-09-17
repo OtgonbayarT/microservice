@@ -19,9 +19,11 @@ var (
 )
 
 func main() {
-    logger := log.New(os.Stdout, "gcuk ", log.LstdFlags | log.Lshortfile)
+	logger := log.New(os.Stdout, "url shortener service: ", log.LstdFlags | log.Lshortfile)
+
+	dbUrl  := "./urls.db"
 	
-	h := handlers.NewHandlersLog(logger)
+	h := handlers.NewHandlersLog(logger, dbUrl)
 	
 	mux := http.NewServeMux()	
 	h.SetUpRoutes(mux)
