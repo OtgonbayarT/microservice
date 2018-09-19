@@ -22,7 +22,7 @@ func TestHandlers_Handler (t *testing.T) {
 		expectedBody 	string
 	}{
 		{
-			name: 			"success",
+			name: 			"encode",
 			in:				req,
 			out:			httptest.NewRecorder(),
 			expectedStatus:	http.StatusOK,

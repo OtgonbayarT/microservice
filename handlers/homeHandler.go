@@ -6,11 +6,8 @@ import (
 	"time"
 	"fmt"
 
-	"github.com/OtgonbayarT/microservice/controllers"
-	"github.com/rapidloop/skv"
+	"github.com/OtgonbayarT/microservice/models"
 )
-
-const message = "home handler!!"
 
 type HandlersLog struct {
 	logger *log.Logger
@@ -21,81 +18,46 @@ type HandlersLog struct {
 func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
 	url := r.PostFormValue("url")
 
-	store, err := skv.Open(h.dbUrl)
-	if err!= nil {
-		store.Close()
-		h.logger.Printf("cannot open db: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
-		return
-	}
-
-	if err := store.Put(fmt.Sprint(controllers.Hash(url)), url); err != nil {
-		store.Close()
+	shortUrl, err := models.InsertUrl(h.dbUrl, url)
+	if err != nil {
 		h.logger.Printf("cannot save data: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("internal server error"))
 		return
 	}
 
-	store.Close()
-
 	w.WriteHeader(http.StatusOK)	
-	w.Write([]byte(fmt.Sprint(controllers.Hash(url))))
+	w.Write([]byte(fmt.Sprintf("%s/%s/%s", r.Host, "decode", shortUrl)))
 }
 
 func (h *HandlersLog) DecodeHandler(w http.ResponseWriter, r *http.Request){
-	code := r.URL.Path[len("/decode/"):]
+	shortUrl := r.URL.Path[len("/decode/"):]
 
-	store, dberr := skv.Open(h.dbUrl)
-	if dberr!= nil {
-		store.Close()
-		h.logger.Printf("cannot open db: %v", dberr)
+	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
+	if err != nil {
+		h.logger.Printf("cannot save data: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("internal server error"))
 		return
 	}
 
-	var val string
-	if err := store.Get(fmt.Sprint(code), &val); err != nil {
-		store.Close()
-		h.logger.Printf("data not found: %v", err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("URL Not Found."))
-		return
-	}
-
-	store.Close()
-
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(val))
+	w.Write([]byte(longUrl))
 
 }
 
 func (h *HandlersLog) RedirectHandler(w http.ResponseWriter, r *http.Request){
-	code := r.URL.Path[len("/redirect/"):]
+	shortUrl := r.URL.Path[len("/redirect/"):]
 
-	store, dberr := skv.Open(h.dbUrl)
-	if dberr!= nil {
-		store.Close()
-		h.logger.Printf("cannot open db: %v", dberr)
+	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
+	if err != nil {
+		h.logger.Printf("cannot save data: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("internal server error"))
 		return
 	}
 
-	var url string
-	if err := store.Get(fmt.Sprint(code), &url); err != nil {
-		store.Close()
-		h.logger.Printf("data not found: %v", err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("URL Not Found."))
-		return
-	}
-
-	store.Close()
-
-	http.Redirect(w, r, string(url), 301)
+	http.Redirect(w, r, string(longUrl), 301)
 }
 
 func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
