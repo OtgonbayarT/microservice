@@ -9,13 +9,11 @@ import (
 	"github.com/OtgonbayarT/microservice/handlers"
 )
 
-const message = "hello world http service"
-
 var (
-	//GcukCertFile     =  os.Getenv("GCUK_CERT_FILE")
-	//GcukKeyFile      =  os.Getenv("GCUK_KEY_FILE")
-	//GcukServiceAddr  =  os.Getenv("GCUK_SERVICE_ADDR")
-	GcukServiceAddr  =  ":8080"
+	//MSCertFile     =  os.Getenv("MS_CERT_FILE")
+	//MSKeyFile      =  os.Getenv("MS_KEY_FILE")
+	//MSServiceAddr  =  os.Getenv("MS_SERVICE_ADDR")
+	MSServiceAddr  =  ":8080"
 )
 
 func main() {
@@ -27,7 +25,7 @@ func main() {
 	
 	mux := http.NewServeMux()	
 	h.SetUpRoutes(mux)
-	srv := server.New(mux, GcukServiceAddr)
+	srv := server.New(mux, MSServiceAddr)
 	
 	logger.Println("server starting")
 	err := srv.ListenAndServe()
