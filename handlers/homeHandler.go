@@ -21,8 +21,8 @@ func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
 	shortUrl, err := models.InsertUrl(h.dbUrl, url)
 	if err != nil {
 		h.logger.Printf("cannot save data: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Cannot save url at the moment!"))
 		return
 	}
 
@@ -36,8 +36,8 @@ func (h *HandlersLog) DecodeHandler(w http.ResponseWriter, r *http.Request){
 	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
 	if err != nil {
 		h.logger.Printf("cannot save data: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("we cannot find encoded url"))
 		return
 	}
 
@@ -52,8 +52,8 @@ func (h *HandlersLog) RedirectHandler(w http.ResponseWriter, r *http.Request){
 	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
 	if err != nil {
 		h.logger.Printf("cannot save data: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("we cannot find encoded url for redirect"))
 		return
 	}
 
