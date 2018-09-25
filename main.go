@@ -7,6 +7,7 @@ import (
 
 	"github.com/OtgonbayarT/microservice/server"
 	"github.com/OtgonbayarT/microservice/handlers"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -16,12 +17,21 @@ var (
 	MSServiceAddr  =  ":8080"
 )
 
+
+
 func main() {
 	logger := log.New(os.Stdout, "url shortener service: ", log.LstdFlags | log.Lshortfile)
 
 	dbUrl  := "./urls.db"
+
+	histogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "encode_duration_seconds",
+		Help: "Time taken to create url",
+	}, []string{"code"})	
 	
-	h := handlers.NewHandlersLog(logger, dbUrl)
+	h := handlers.NewHandlersLog(logger, dbUrl, histogram)
+
+	prometheus.Register(histogram)
 	
 	mux := http.NewServeMux()	
 	h.SetUpRoutes(mux)

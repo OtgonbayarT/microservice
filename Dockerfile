@@ -2,7 +2,7 @@ FROM golang:1.8 as buildstage
 ENV SRC=/go/src/github.com/OtgonbayarT/
 RUN mkdir -p /go/src/github.com/OtgonbayarT/
 WORKDIR /go/src/github.com/OtgonbayarT/microservice
-RUN go get github.com/rapidloop/skv
+RUN go get github.com/rapidloop/skv github.com/prometheus/client_golang/prometheus
 RUN git clone -b master https://github.com/OtgonbayarT/microservice.git /go/src/github.com/OtgonbayarT/microservice/ \
 && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 go build -o bin/go_docker
