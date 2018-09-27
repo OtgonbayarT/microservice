@@ -18,22 +18,44 @@ type HandlersLog struct {
 
 
 func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
+	contentType := r.Header.Get("Content-type")
+    
 	url := r.PostFormValue("url")
 
-	shortUrl, err := models.InsertUrl(h.dbUrl, url)
-	if err != nil {
-		h.logger.Printf("cannot save data: %v", err)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Cannot save url at the moment!"))
+	if (contentType == "application/x-www-form-urlencoded" && len(url) > 0){
+		shortUrl, err := models.InsertUrl(h.dbUrl, url)
+		if err != nil {
+			h.logger.Printf("cannot save data: %v", err)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Cannot save url at the moment!"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)	
+		w.Write([]byte(fmt.Sprintf("%s/%s/%s", r.Host, "decode", shortUrl)))
+	}else{
+		w.WriteHeader(http.StatusBadRequest)
+		h.logger.Printf("unacceptable POST request")
+
+		if len(url) < 1 {
+			log.Println("body 'url' is missing")
+			
+			w.Write([]byte("body 'url' is missing"))
+			return
+		}
+		w.Write([]byte("Request Header must be : application/x-www-form-urlencoded"))
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)	
-	w.Write([]byte(fmt.Sprintf("%s/%s/%s", r.Host, "decode", shortUrl)))
 }
 
 func (h *HandlersLog) DecodeHandler(w http.ResponseWriter, r *http.Request){
 	shortUrl := r.URL.Path[len("/decode/"):]
+
+	if len(shortUrl) < 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("there is nothing to decode"))
+		return
+	}
 
 	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
 	if err != nil {
@@ -50,6 +72,12 @@ func (h *HandlersLog) DecodeHandler(w http.ResponseWriter, r *http.Request){
 
 func (h *HandlersLog) RedirectHandler(w http.ResponseWriter, r *http.Request){
 	shortUrl := r.URL.Path[len("/redirect/"):]
+
+	if len(shortUrl) < 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("there is nothing to redirect"))
+		return
+	}
 
 	longUrl, err := models.GetUrl(h.dbUrl, shortUrl)
 	if err != nil {
