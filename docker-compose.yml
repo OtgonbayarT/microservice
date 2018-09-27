@@ -8,6 +8,6 @@ services:
      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
 
   microservice:
-    image: senarius/microservice:0.2
+    image: senarius/microservice:0.3
     ports:
       - 8080:8080
