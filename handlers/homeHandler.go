@@ -16,7 +16,6 @@ type HandlersLog struct {
 	histogram *prometheus.HistogramVec
 }
 
-
 func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
 	contentType := r.Header.Get("Content-type")
     
@@ -38,9 +37,10 @@ func (h *HandlersLog) EncodeHandler(w http.ResponseWriter, r *http.Request){
 		h.logger.Printf("unacceptable POST request")
 
 		if len(url) < 1 {
-			log.Println("body 'url' is missing")
+			msg := "body 'url' is missing"
+			log.Println(msg)
 			
-			w.Write([]byte("body 'url' is missing"))
+			w.Write([]byte(msg))
 			return
 		}
 		w.Write([]byte("Request Header must be : application/x-www-form-urlencoded"))
@@ -92,11 +92,14 @@ func (h *HandlersLog) RedirectHandler(w http.ResponseWriter, r *http.Request){
 
 func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request){
-		code := 200	
+
 		startTime := time.Now()
 		defer func() { 
+			o := &responseObserver{ResponseWriter: w}
+			next.ServeHTTP(o, r)
 			duration := time.Since(startTime)
-			h.histogram.WithLabelValues(fmt.Sprintf("%d", code)).Observe(duration.Seconds())
+			h.logger.Printf("http status %d\n", o.status);
+			h.histogram.WithLabelValues(fmt.Sprintf("%d", o.status)).Observe(duration.Seconds())
 			h.logger.Printf("request processed in %s\n", time.Now().Sub(startTime));
 		}()
 		next(w, r)
@@ -121,6 +124,30 @@ func NewHandlersLog(logger *log.Logger, dbUrl string,  histogram *prometheus.His
 }
 
 func prometheusHandler(w http.ResponseWriter) http.Handler {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	return prometheus.Handler()
+}
+
+type responseObserver struct {
+	http.ResponseWriter
+	status      int
+	written     int64
+	wroteHeader bool
+}
+
+func (o *responseObserver) Write(p []byte) (n int, err error) {
+	if !o.wroteHeader {
+		o.WriteHeader(http.StatusOK)
+	}
+	n, err = o.ResponseWriter.Write(p)
+	o.written += int64(n)
+	return
+}
+
+func (o *responseObserver) WriteHeader(code int) {
+	o.ResponseWriter.WriteHeader(code)
+	if o.wroteHeader {
+		return
+	}
+	o.wroteHeader = true
+	o.status = code
 }
