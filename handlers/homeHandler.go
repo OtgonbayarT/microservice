@@ -94,15 +94,14 @@ func (h *HandlersLog) Logger(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request){
 
 		startTime := time.Now()
-		defer func() { 
-			o := &responseObserver{ResponseWriter: w}
-			next.ServeHTTP(o, r)
-			duration := time.Since(startTime)
+		o := &responseObserver{ResponseWriter: w}
+		defer func() { 			
+			duration := time.Since(startTime)		    
 			h.logger.Printf("http status %d\n", o.status);
 			h.histogram.WithLabelValues(fmt.Sprintf("%d", o.status)).Observe(duration.Seconds())
 			h.logger.Printf("request processed in %s\n", time.Now().Sub(startTime));
 		}()
-		next(w, r)
+		next.ServeHTTP(o, r)
 	}
 }
 
