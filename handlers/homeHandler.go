@@ -122,10 +122,6 @@ func NewHandlersLog(logger *log.Logger, dbUrl string,  histogram *prometheus.His
 	}
 }
 
-func prometheusHandler(w http.ResponseWriter) http.Handler {
-	return prometheus.Handler()
-}
-
 type responseObserver struct {
 	http.ResponseWriter
 	status      int
