@@ -3,7 +3,7 @@
 Build the image:
 
 ```
-# docker build -t senarius/microservice:0.2 . -f Dockerfile
+# docker build -t senarius/microservice:0.3 . -f Dockerfile
 ```
 
 make sure add hosts:
